@@ -1,13 +1,16 @@
+using Microsoft.VisualBasic;
+using TodoApi.Models;
+using TodoApi.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<ITodoRepository, TodoRepository>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -16,29 +19,51 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+var todoApi = app.MapGroup("api/todo");
 
-app.MapGet("/weatherforecast", () =>
+todoApi.MapGet("/", (ITodoRepository repository, ILogger<Program> logger) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    logger.LogInformation("Obtendo todas as tarefas");
+    return Results.Ok(repository.GetAll());
+});
 
-app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+todoApi.MapGet("/{id}", (int id, ITodoRepository repository, ILogger<Program> logger) =>
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+    logger.LogInformation($"obtendo tarefa pelo ID {id}");
+    var item = repository.GetById(id);
+    if (item == null)
+    {
+        logger.LogWarning($"Task with id {id} not found");
+        return Results.NotFound();
+
+    }
+    return Results.Ok(item);
+});
+
+todoApi.MapPost("/", (TodoItem item, ITodoRepository repository, ILogger<Program> logger) =>
+{
+    logger.LogInformation("Creating new task");
+    TodoItem createdItem = repository.Create(item);
+    return Results.Created($"api/todo/{createdItem.Id}", createdItem);
+});
+
+todoApi.MapPut("/{id}", (int id, TodoItem item, ITodoRepository repository, Logger<Program> logger) =>
+{
+    if (id != item.Id)
+        return Results.BadRequest("Url ID is differente from id in body");
+    logger.LogInformation($"Item with id {id} is being updated...");
+    var updateItem = repository.Update(item);
+    if (updateItem == null)
+        return Results.NotFound();
+    return Results.Created("result", updateItem);
+});
+
+todoApi.MapDelete("/{id}", (int id, ITodoRepository repository, ILogger<Program> logger) =>
+{
+    var deleteItem = repository.Delete(id);
+    if (deleteItem == null)
+        return Results.NotFound();
+    logger.LogInformation($"Deleted item with id {id}");
+    return Results.Ok();
+});
