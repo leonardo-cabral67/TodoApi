@@ -23,14 +23,14 @@ var todoApi = app.MapGroup("api/todo");
 
 todoApi.MapGet("/", (ITodoRepository repository, ILogger<Program> logger) =>
 {
-    logger.LogInformation("Obtendo todas as tarefas");
+    logger.LogInformation("Loading all Items");
     return Results.Ok(repository.GetAll());
 });
 
 
 todoApi.MapGet("/{id}", (int id, ITodoRepository repository, ILogger<Program> logger) =>
 {
-    logger.LogInformation($"obtendo tarefa pelo ID {id}");
+    logger.LogInformation($"Loading item by id: {id}");
     var item = repository.GetById(id);
     if (item == null)
     {
