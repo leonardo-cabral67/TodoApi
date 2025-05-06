@@ -8,5 +8,5 @@ public interface ITodoRepository
   TodoItem? GetById(int id);
   TodoItem Create(TodoItem item);
   TodoItem? Update(TodoItem item);
-  TodoItem? Delete(int Id);
+  TodoItem? Delete(int id);
 }
