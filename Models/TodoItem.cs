@@ -1,10 +1,25 @@
 namespace TodoApi.Models;
 
-public class TodoItem
+public class TodoItem(string title, string description)
 {
-  public int Id { get; set; }
-  public string? Title { get; set; }
-  public string? Description { get; set; }
-  public bool IsComplete { get; set; }
-  public DateTime CreatedAt { get; set; } = DateTime.Now;
+  public Guid Id { get; init; } = Guid.NewGuid();
+  public string Title { get; private set; } = title;
+  public string Description { get; private set; } = description;
+  public bool IsComplete { get; private set; } = false;
+  public DateTime CreatedAt { get; init; } = DateTime.Now;
+
+  public void ChangeTitle(string newTitle)
+  {
+    Title = newTitle;
+  }
+
+  public void ChangeDescription(string newDescription)
+  {
+    Description = newDescription;
+  }
+
+  public void ChangeIsComplete()
+  {
+    IsComplete = !IsComplete;
+  }
 }
